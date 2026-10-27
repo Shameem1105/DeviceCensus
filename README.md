@@ -2,7 +2,7 @@
 
 ## Problem
 
-IoT engineers and developers building Home Assistant integrations need to understand how existing integrations communicate with devices, retrieve sensor data, and handle connection errors. This information is spread across more than 1,500 integration manifests and thousands of Python source files, making manual research time-consuming and error-prone. General-purpose LLMs can also produce incorrect counts or unsupported explanations when answering questions about a large codebase. DeviceCensus parses Home Assistant Core source code into structured data and combines Python/SQL analysis with AI-powered code retrieval to provide accurate, evidence-backed answers with links to the original files.
+IoT engineers and developers building Home Assistant integrations need to understand how existing integrations communicate with devices, retrieve sensor data, and handle connection errors. This information is spread across more than 1,500 integration manifests and thousands of Python source files, making manual research time-consuming and error-prone. General-purpose LLMs can also produce incorrect counts or unsupported explanations when answering questions about a large codebase. DeviceCensus will parse Home Assistant Core source code into structured data and combine Python/SQL analysis with source-code retrieval to provide accurate, evidence-backed answers with links to the original files.
 
 ## Who it is for
 
@@ -11,7 +11,7 @@ IoT engineers and developers building Home Assistant integrations need to unders
 
 ## Signature feature
 
-A natural-language AI analyst that combines exact SQL/Python counting with source-code retrieval to answer integration research questions and provide traceable evidence from the Home Assistant Core repository.
+A planned natural-language AI analyst that combines exact SQL/Python counting with source-code retrieval to answer integration research questions and provide traceable evidence from the Home Assistant Core repository.
 
 ## Hardest problem (my interview story)
 
@@ -21,35 +21,37 @@ The main technical challenge is extracting reliable information from thousands o
 
 | Source | Link | Documents | Pages | Licence / terms |
 |---|---|---|---|---|
-| Home Assistant Core | https://github.com/home-assistant/core | 19,000+ source files and 1,500+ integration manifests (minimum project scope) | Not applicable | Apache-2.0, as specified in the project brief; verify the repository's current licence and preserve applicable notices |
+| Home Assistant Core | https://github.com/home-assistant/core | Targets: at least 19,000 inventoried source/configuration files and 1,500 successfully parsed integration manifests; actual counts are recorded by the collector | Not applicable | Preserve upstream licence notices and record the collected source commit |
 
 ## 10 real questions
 
 See [docs/QUESTIONS.md](docs/QUESTIONS.md).
 
-## Run it
+## Collect the data
 
 ```bash
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# macOS/Linux
-source .venv/bin/activate
-
-pip install -r requirements-dev.txt
-
-# Windows
-copy .env.example .env
-
-# macOS/Linux
-cp .env.example .env
-
-uvicorn app.main:app --reload
-
-curl localhost:8000/health
+py -3 .\scripts\collect_data.py
 ```
+
+The standard-library collector uses the sibling `core\` checkout by default and
+writes generated artifacts under `data\`. From the workspace parent folder:
+
+```powershell
+py -3 .\DeviceCensus\scripts\collect_data.py `
+  --core-root .\core `
+  --output-root .\DeviceCensus\data
+Push-Location .\DeviceCensus
+py -3 -m unittest discover -s .\tests -v
+Pop-Location
+```
+
+From inside `DeviceCensus\`, run `py -3 .\scripts\collect_data.py` and
+`py -3 -m unittest discover -s .\tests -v`. Use `--chunk-size` and
+`--chunk-overlap` to configure the default 100-line chunks and 15-line overlap.
+Actual counts and target status are written to
+`data\processed\collection_summary.json`. The collector does not infer or verify
+integration behavior. See [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md) for
+field definitions and provenance.
 
 ## Live link
 

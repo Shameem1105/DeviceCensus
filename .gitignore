@@ -1,0 +1,7 @@
+# Source-derived corpora and verbatim manifests can be large.
+/data/raw/
+/data/processed/code_chunks.jsonl
+
+# Python test and bytecode caches.
+__pycache__/
+*.py[cod]
