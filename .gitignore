@@ -2,6 +2,15 @@
 /data/raw/
 /data/processed/code_chunks.jsonl
 
+# Python virtual environments and environment variables
+.venv/
+venv/
+env/
+.env
+
 # Python test and bytecode caches.
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/

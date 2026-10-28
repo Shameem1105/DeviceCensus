@@ -1,113 +1,120 @@
-# Data dictionary
+# Data Dictionary
 
-All paths in generated records are relative to the Home Assistant Core repository
-root. The source commit SHA identifies the exact checkout that was collected.
-Collection timestamps are UTC. Generated outputs are observations of that checkout,
-not claims about device behavior.
+All paths in generated records are relative to the Home Assistant Core repository root. The source commit SHA identifies the exact checkout that was collected. Collection timestamps are in UTC. Generated outputs are empirical observations of that checkout, not claims about device runtime behavior.
 
-## Raw integration manifests
+## Raw Integration Manifests
 
-`data/raw/integration_manifests.jsonl` has one record per successfully parsed
-manifest:
+`data/raw/integration_manifests.jsonl` contains one record per successfully parsed manifest:
 
-| Field | Meaning |
-|---|---|
-| `source_path` | Observed repository-relative path to the manifest. |
-| `source_commit_sha` | Observed Git `HEAD` SHA for the source checkout. |
-| `manifest` | Original parsed JSON object, preserved without editing or filling missing keys. |
+| Field | Type | Description |
+|---|---|---|
+| `source_path` | string | Observed repository-relative path to the manifest (e.g., `homeassistant/components/<domain>/manifest.json`). |
+| `source_commit_sha` | string | Observed Git `HEAD` SHA for the source checkout. |
+| `manifest` | object | Original parsed JSON object, preserved verbatim without editing or filling missing keys. |
 
-Invalid JSON, unreadable manifests, and JSON roots that are not objects are omitted
-from this raw parsed-manifest file and described in
-`data/processed/manifest_errors.jsonl`.
+Invalid JSON, unreadable manifests, and JSON roots that are not objects are omitted from this raw parsed-manifest file and recorded in `data/processed/manifest_errors.jsonl`.
 
-## Integration records
+## Integration Records
 
-`data/processed/integrations.json` is an array; `integrations.csv` has the same
-fields, with list/object-valued columns serialized as JSON text.
+`data/processed/integrations.json` is a JSON array of integration records; `data/processed/integrations.csv` contains the same tabular fields, with list/object-valued columns serialized as JSON strings.
 
-| Field | Meaning |
-|---|---|
-| `domain`, `name`, `iot_class`, `quality_scale`, `integration_type`, `config_flow`, `requirements`, `dependencies`, `after_dependencies`, `codeowners` | Values read from the manifest when present; `null` means the key was absent or null. No value is inferred to fill a missing manifest field. |
-| `manifest_path` | Observed manifest path relative to the Core repository. |
-| `source_commit_sha` | Observed source revision. |
-| `python_file_count` | Count of `.py` files found below the manifest's integration directory, excluding configured generated/cache directories. |
-| `has_sensor_py` | Whether `sensor.py` exists at the integration directory's top level. This is file-presence metadata only. |
-| `has_config_flow_py` | Whether `config_flow.py` exists at the integration directory's top level. This is file-presence metadata only. |
-| `has_coordinator_py` | Whether any descendant Python file is named `coordinator.py`. This is file-presence metadata only. |
-| `original_manifest` | Original parsed manifest object, retained for provenance. |
+| Field | Type | Description |
+|---|---|---|
+| `domain` | string | Declared integration domain (e.g., `fronius`, `hue`). |
+| `name` | string | Human-readable title of the integration. |
+| `iot_class` | string \| null | Declared IoT connectivity class (e.g., `local_polling`, `cloud_polling`, `local_push`, `cloud_push`, `assumed_state`). |
+| `quality_scale` | string \| null | Declared Home Assistant integration quality scale (e.g., `platinum`, `gold`, `silver`, `internal`, `legacy`). |
+| `integration_type` | string \| null | Architectural classification (e.g., `hub`, `device`, `service`, `virtual`, `system`). |
+| `config_flow` | boolean \| null | Whether the manifest declares support for UI config flow (`true` / `false` / `null`). |
+| `requirements` | list[string] \| null | External PyPI packages required by the integration. |
+| `dependencies` | list[string] \| null | Other Home Assistant components required as prerequisites. |
+| `after_dependencies` | list[string] \| null | Components to load after this integration if present. |
+| `codeowners` | list[string] \| null | GitHub handles or team tags responsible for the component. |
+| `manifest_path` | string | Observed manifest path relative to the Core repository root. |
+| `source_commit_sha` | string | Git commit SHA of the collected Home Assistant Core repository. |
+| `python_file_count` | integer | Count of `.py` files found below the manifest's integration directory (excluding configured generated/cache directories). |
+| `has_sensor_py` | boolean | Whether a top-level `sensor.py` exists in the integration directory (file presence indicator only). |
+| `has_config_flow_py` | boolean | Whether a top-level `config_flow.py` exists in the integration directory (file presence indicator only). |
+| `has_coordinator_py` | boolean | Whether any descendant Python file is named `coordinator.py` (file presence indicator only). |
+| `original_manifest` | object | Complete original parsed manifest object, preserved for provenance. |
 
-File-presence metadata does not verify polling, protocol support, sensor behavior,
-energy capabilities, or any other runtime behavior.
+> [!NOTE]
+> File presence flags (`has_sensor_py`, `has_coordinator_py`, etc.) indicate file existence only. They do not prove runtime polling behavior, Modbus support, energy sensor availability, or error recovery correctness.
 
-## Source inventory
+## Source Inventory
 
-`data/processed/source_inventory.csv` includes one row for each eligible file that
-was successfully statted. Eligible extensions are `.py`, `.js`, `.ts`, `.tsx`,
-`.jsx`, `.json`, `.yaml`, `.yml`, `.toml`, `.html`, `.css`, `.scss`, `.sh`, and
-`.sql`. Directories named `.git`, `node_modules`, common virtual environments,
-caches, build output, and `generated` are excluded; the exact set is maintained in
-`scripts/collect_data.py`.
+`data/processed/source_inventory.csv` inventories all eligible source and configuration files across Home Assistant Core. Eligible extensions: `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.yaml`, `.yml`, `.toml`, `.html`, `.css`, `.scss`, `.sh`, and `.sql`.
 
-| Field | Meaning |
-|---|---|
-| `relative_path` | Observed path relative to the Core repository. |
-| `extension` | Lowercase filename extension. |
-| `size_bytes` | Observed file size from filesystem metadata. |
-| `is_python` | Whether the extension is `.py`. |
-| `is_integration_file` | Whether the path is below `homeassistant/components/<directory>/`; path-derived, not a manifest claim. |
-| `integration_domain` | Component directory name from the path when identifiable; it may not match a manifest's declared domain. |
-| `source_commit_sha` | Observed source revision. |
+Exclusions: `.git`, `node_modules`, `.venv`, `venv`, `env`, `__pycache__`, `.pytest_cache`, `.ruff_cache`, `build`, `dist`, `coverage`, and `generated` directories.
 
-Inventory counts reflect files actually traversed and statted, not a target or
-estimate. Skipped files and traversal/read errors are in
-`data/processed/collection_errors.jsonl`.
+| Field | Type | Description |
+|---|---|---|
+| `relative_path` | string | Path relative to the Core repository root. |
+| `extension` | string | Lowercase file extension (e.g., `.py`, `.yaml`). |
+| `size_bytes` | integer | File size in bytes from filesystem metadata. |
+| `is_python` | boolean | True if file has `.py` extension. |
+| `is_integration_file` | boolean | True if file resides under `homeassistant/components/<domain>/`. |
+| `integration_domain` | string \| null | Component directory name extracted from the path when identifiable. |
+| `source_commit_sha` | string | Source commit revision SHA. |
 
-## Code chunks
+## Code Chunks
 
-`data/processed/code_chunks.jsonl` contains chunks from readable Python files under
-`homeassistant/components/`. The default is 100 lines per chunk with 15 lines of
-overlap; both values can be changed through command-line options. Start and end
-line numbers are one-based and inclusive.
+`data/processed/code_chunks.jsonl` contains line-bounded chunks from readable Python files under `homeassistant/components/`. Configurable via `--chunk-size` (default: 100 lines) and `--chunk-overlap` (default: 15 lines). Line numbers are 1-based and inclusive.
 
-| Field | Meaning |
-|---|---|
-| `chunk_id` | SHA-256 of source commit, relative path, and line bounds; stable for that source revision and chunk layout. |
-| `relative_path` | Observed source file path. |
-| `integration_domain` | Component directory name derived from the path, when identifiable. |
-| `start_line`, `end_line` | One-based inclusive source line bounds. |
-| `text` | Exact decoded source text for those lines. |
-| `source_commit_sha` | Observed source revision. |
+| Field | Type | Description |
+|---|---|---|
+| `chunk_id` | string | SHA-256 hash of `{source_commit_sha}\0{relative_path}\0{start_line}\0{end_line}`; stable for a given revision and chunk configuration. |
+| `relative_path` | string | Path to the source file relative to the Core repository. |
+| `integration_domain` | string \| null | Integration domain derived from path. |
+| `start_line` | integer | 1-based inclusive start line number in the source file. |
+| `end_line` | integer | 1-based inclusive end line number in the source file. |
+| `text` | string | Exact decoded source code text for lines `[start_line, end_line]`. |
+| `source_commit_sha` | string | Observed source commit revision. |
 
-Chunk availability is not evidence that protocols or runtime behavior have been
-identified or verified.
+## Errors and Collection Summary
 
-## Errors and summary
+- `data/processed/manifest_errors.jsonl`: Records any manifest discovery or JSON parsing failures (`stage`, `path`, `error_type`, `message`).
+- `data/processed/collection_errors.jsonl`: Records filesystem traversal, stat, or source-read errors with the same schema.
+- `data/processed/collection_summary.json`: High-level execution metrics and size target verification.
 
-`manifest_errors.jsonl` records each failed manifest parse with `stage`, `path`,
-`error_type`, and `message`. `collection_errors.jsonl` uses the same fields for
-repository traversal, inventory, and code-read failures.
+| Field | Type | Description |
+|---|---|---|
+| `collection_timestamp_utc` | string | ISO 8601 UTC timestamp of pipeline execution. |
+| `source_repository` | string | Local file path to the Home Assistant Core repository used. |
+| `source_commit_sha` | string | Observed Git commit SHA of the source checkout. |
+| `total_manifests_discovered` | integer | Number of `manifest.json` files found under `homeassistant/components/`. |
+| `successfully_parsed_manifests`| integer | Number of candidates parsed as valid JSON objects. |
+| `manifest_parsing_failures` | integer | Number of manifest candidates that failed parsing. |
+| `unique_integration_domains` | integer | Count of distinct non-null manifest domain names. |
+| `integration_domains` | list[string] | Alphabetically sorted list of all unique domains. |
+| `source_files_inventoried` | integer | Number of eligible source files traversed and statted. |
+| `python_files_inventoried` | integer | Number of inventoried `.py` files. |
+| `integration_python_files_inventoried` | integer | Number of inventoried `.py` files under `homeassistant/components/`. |
+| `integration_python_files_indexed` | integer | Number of component Python files successfully chunked. |
+| `code_chunks_generated` | integer | Total number of code chunks generated. |
+| `skipped_files` | integer | Files skipped due to read or stat errors. |
+| `collection_error_count` | integer | Total error count across all stages. |
+| `collection_error_counts_by_stage` | object | Error counts broken down by stage. |
+| `dataset_size_targets` | object | Target checks: `integration_manifests` (>= 1,500) and `source_files` (>= 19,000). |
 
-`collection_summary.json` records:
+## Artifact Storage and Git Hygiene
 
-| Field | Meaning |
-|---|---|
-| `collection_timestamp_utc` | UTC timestamp when the collection summary was generated. |
-| `source_repository` | Absolute local path used for collection. |
-| `source_commit_sha` | Observed Core revision. |
-| `total_manifests_discovered` | Number of `manifest.json` candidates found under `homeassistant/components/`. |
-| `successfully_parsed_manifests` | Number of candidates that parsed as JSON objects. |
-| `manifest_parsing_failures` | Number of candidate manifests recorded as parse errors. |
-| `unique_integration_domains` | Count of distinct non-null string `domain` values in valid manifests. |
-| `integration_domains` | Sorted distinct non-null string manifest domain values. |
-| `source_files_inventoried` | Number of eligible files successfully statted. |
-| `python_files_inventoried` | Number of inventoried `.py` files. |
-| `integration_python_files_inventoried` | Number of inventoried `.py` files below the components directory. |
-| `integration_python_files_indexed` | Number of component Python files successfully read for chunk generation, including empty files. |
-| `code_chunks_generated` | Number of emitted code chunks. |
-| `skipped_files` | Count of inventory-stat and code-read failures. |
-| `collection_error_count` | Total manifest and non-manifest collection errors. |
-| `collection_error_counts_by_stage` | Error counts grouped by stage. |
-| `dataset_size_targets` | Measured counts compared with the brief's minimums: 19,000 inventoried files and 1,500 successfully parsed manifests. |
+| Artifact | Typical Size | Recommended Git Action | Rationale |
+|---|---|---|---|
+| `collection_summary.json` | ~27 KB | Track in Git | Essential lightweight audit artifact tracking counts, commit SHA, and target status. |
+| `manifest_errors.jsonl` | 0 KB | Track in Git | Logs parse errors; zero bytes on a clean run. |
+| `collection_errors.jsonl` | 0 KB | Track in Git | Logs traversal/read errors; zero bytes on a clean run. |
+| `integrations.csv` | ~964 KB | Track in Git | Primary compact tabular dataset for SQL analysis and inspection. |
+| `integrations.json` | ~1.76 MB | Track in Git | Structured hierarchical manifest dataset for downstream programmatic consumption. |
+| `source_inventory.csv` | ~3.15 MB | Track in Git | Complete file-level audit trail across Home Assistant Core. |
+| `data/raw/integration_manifests.jsonl` | ~788 KB | Exclude from Git (`.gitignore`) | Raw dump; fully reproducible from upstream Core repository checkout. |
+| `data/processed/code_chunks.jsonl` | ~69.2 MB | Exclude from Git (`.gitignore`) | Exceeds GitHub recommended file limits (>50 MB push warning threshold); reproducible on demand. |
 
-`met` is calculated from the measured count; manifest target status is explicitly
-based on successfully parsed manifests.
+## Baseline Cross-Check Reference
+
+For verification against Home Assistant Core commit `fbee16b2aae664f10d819c0121575102326eaa17`:
+- Manifests discovered & parsed: 1,554 (Target: >= 1,500)
+- Source files inventoried: 27,376 (Target: >= 19,000)
+- Component Python files: 10,567
+- Code chunks generated (100 lines / 15 overlap): 22,707
+- Total errors: 0

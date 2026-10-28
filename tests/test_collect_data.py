@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Ensure project root is in sys.path so tests can run from any working directory
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.collect_data import collect_data
 
@@ -84,20 +90,24 @@ class CollectDataTests(unittest.TestCase):
 
     def test_invalid_json_is_recorded_and_missing_optional_fields_are_null(self) -> None:
         self.write("homeassistant/components/bad/manifest.json", "{broken")
+        self.write("homeassistant/components/array_root/manifest.json", "[1, 2, 3]")
         self.write(
             "homeassistant/components/sparse/manifest.json",
             json.dumps({"domain": "sparse"}),
         )
         summary = self.collect()
 
-        self.assertEqual(summary["total_manifests_discovered"], 2)
+        self.assertEqual(summary["total_manifests_discovered"], 3)
         self.assertEqual(summary["successfully_parsed_manifests"], 1)
-        self.assertEqual(summary["manifest_parsing_failures"], 1)
+        self.assertEqual(summary["manifest_parsing_failures"], 2)
         error_lines = (
             self.output_root / "processed" / "manifest_errors.jsonl"
         ).read_text(encoding="utf-8").splitlines()
-        self.assertEqual(len(error_lines), 1)
-        self.assertIn("homeassistant/components/bad/manifest.json", error_lines[0])
+        self.assertEqual(len(error_lines), 2)
+        errors = [json.loads(line) for line in error_lines]
+        error_paths = [e["path"] for e in errors]
+        self.assertIn("homeassistant/components/bad/manifest.json", error_paths)
+        self.assertIn("homeassistant/components/array_root/manifest.json", error_paths)
         with (self.output_root / "processed" / "integrations.json").open(
             encoding="utf-8"
         ) as input_file:
