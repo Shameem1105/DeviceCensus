@@ -1,8 +1,15 @@
+import sys
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import Settings, get_settings
-from app.main import app
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from app.config import Settings, get_settings  # noqa: E402
+from app.main import app  # noqa: E402
 
 
 @pytest.fixture
