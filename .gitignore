@@ -9,6 +9,10 @@ venv/
 env/
 .env
 
+# Local tracker and scratch drafts
+*.xlsx
+README_draft_old.md
+
 # Python test and bytecode caches.
 __pycache__/
 *.py[cod]
