@@ -499,7 +499,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--core-root",
         type=Path,
-        default=project_root.parent / "core",
+        default=(project_root / "core") if (project_root / "core").is_dir() else (project_root.parent / "core"),
         help="Path to the locally cloned Home Assistant Core repository",
     )
     parser.add_argument(

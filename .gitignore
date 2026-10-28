@@ -1,6 +1,7 @@
 # Source-derived corpora and verbatim manifests can be large.
 /data/raw/
 /data/processed/code_chunks.jsonl
+/core/
 
 # Python virtual environments and environment variables
 .venv/
