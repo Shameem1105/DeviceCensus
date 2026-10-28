@@ -5,7 +5,7 @@ import json
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.collect_data import collect_data
+from scripts.collect_data import collect_data  # noqa: E402
 
 
 class CollectDataTests(unittest.TestCase):
@@ -44,7 +44,7 @@ class CollectDataTests(unittest.TestCase):
             chunk_overlap=1,
             target_source_files=4,
             target_manifests=2,
-            collection_timestamp=datetime(2026, 1, 2, tzinfo=timezone.utc),
+            collection_timestamp=datetime(2026, 1, 2, tzinfo=UTC),
         )
 
     def test_valid_manifest_preserves_source_and_commit(self) -> None:

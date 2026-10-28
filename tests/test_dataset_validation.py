@@ -131,7 +131,7 @@ class DatasetValidationTests(unittest.TestCase):
 
         count = 0
         with raw_manifests_path.open(encoding="utf-8") as f:
-            for line in f:
+            for _line in f:
                 count += 1
         self.assertEqual(
             count,

@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -424,11 +424,11 @@ def collect_data(
         for row in inventory
         if row["is_python"] and row["is_integration_file"]
     )
-    timestamp = collection_timestamp or datetime.now(timezone.utc)
+    timestamp = collection_timestamp or datetime.now(UTC)
     if timestamp.tzinfo is None:
         raise ValueError("collection_timestamp must include a timezone")
     timestamp_text = (
-        timestamp.astimezone(timezone.utc)
+        timestamp.astimezone(UTC)
         .isoformat(timespec="seconds")
         .replace("+00:00", "Z")
     )
@@ -496,10 +496,15 @@ def get_source_commit_sha(core_root: Path) -> str:
 def main(argv: list[str] | None = None) -> int:
     project_root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
+    default_core = (
+        (project_root / "core")
+        if (project_root / "core").is_dir()
+        else (project_root.parent / "core")
+    )
     parser.add_argument(
         "--core-root",
         type=Path,
-        default=(project_root / "core") if (project_root / "core").is_dir() else (project_root.parent / "core"),
+        default=default_core,
         help="Path to the locally cloned Home Assistant Core repository",
     )
     parser.add_argument(
